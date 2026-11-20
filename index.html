@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NaSk2 Gamezone</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0b1020;--panel:#151d33;--panel2:#1c2945;--text:#eef3ff;--muted:#aab6d0;--accent:#70e1c1;--blue:#86a8ff;--danger:#ff8585}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#182746,var(--bg) 55%);color:var(--text);font:16px/1.55 system-ui,Arial}
+header{padding:22px max(5vw,18px);display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid #ffffff18}
+h1,h2,h3{line-height:1.2}h1{margin:0;font-size:clamp(25px,4vw,38px)}h2{margin-top:0}p{color:var(--muted)}
+main{max-width:1100px;margin:30px auto;padding:0 18px}.brand span{color:var(--accent)}.muted{color:var(--muted)}
+button,input{font:inherit;border-radius:11px;padding:11px 14px;border:1px solid #ffffff25}
+button{background:var(--accent);color:#092018;font-weight:750;cursor:pointer;border:0}button.secondary{background:var(--panel2);color:var(--text);border:1px solid #ffffff20}button.danger{background:#642d3a;color:white}button:disabled{opacity:.45;cursor:not-allowed}
+input{width:100%;background:#0e1629;color:var(--text);margin:5px 0 12px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:15px}.card{background:linear-gradient(145deg,var(--panel),#111a2e);border:1px solid #ffffff15;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:0 12px 35px #0002}
+.hidden{display:none!important}.pill{display:inline-block;background:#243653;color:var(--accent);padding:4px 10px;border-radius:30px;font-size:13px}
+label{font-weight:650}.status{padding:12px;border-radius:12px;background:#182943;color:var(--muted);margin:12px 0}.error{color:#ffaaaa}.success{color:#8ff0cb}
+.lesson{white-space:pre-line}.question{font-size:19px;font-weight:700}.answer{display:block;width:100%;text-align:left;margin:8px 0;background:var(--panel2);color:var(--text);border:1px solid #ffffff20}.answer.selected{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #ffffff18;vertical-align:top}th{color:var(--accent)}.tablewrap{overflow:auto}
+small{color:var(--muted)}a{color:var(--blue)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+</style>
+</head>
+<body>
+<header><div class="brand"><h1>NaSk2 <span>Gamezone</span></h1><small>leren voor TL3 · Nova hoofdstuk 2 en 3</small></div><div id="userbar" class="hidden row"><span id="who"></span><button class="secondary" id="logout">uitloggen</button></div></header>
+<main>
+<section id="setup" class="card">
+<h2>website instellen</h2>
+<p>de online accountfunctie moet eerst gekoppeld worden aan jouw eigen Supabase-project</p>
+<label>Supabase project URL</label><input id="url" placeholder="https://jouwproject.supabase.co">
+<label>Supabase anon / publishable key</label><input id="key" placeholder="sb_publishable_... of anon key">
+<button id="connect">verbinden</button><div id="setupmsg" class="status">vul de twee gegevens in die je in Supabase vindt</div>
+<small>deze gegevens zijn bedoeld voor de browser gebruik nooit de service role key op een website</small>
+</section>
+
+<section id="auth" class="grid hidden">
+<div class="card"><h2>inloggen</h2><label>e-mailadres</label><input id="loginEmail" type="email" autocomplete="email"><label>wachtwoord</label><input id="loginPass" type="password" autocomplete="current-password"><button id="login">inloggen</button><button class="secondary" id="forgot">wachtwoord vergeten</button></div>
+<div class="card"><h2>account aanmaken</h2><label>gebruikersnaam</label><input id="signupName" maxlength="30"><label>e-mailadres</label><input id="signupEmail" type="email" autocomplete="email"><label>wachtwoord</label><input id="signupPass" type="password" minlength="8" autocomplete="new-password"><button id="signup">account aanmaken</button><p><small>gebruik een eigen sterk wachtwoord van minimaal 8 tekens</small></p></div>
+</section>
+<div id="msg" class="status hidden" role="status"></div>
+
+<section id="app" class="hidden">
+<div class="card"><div class="row"><div><span class="pill" id="roleTag">leerling</span><h2 id="welcome">welkom</h2><p>jouw voortgang wordt online opgeslagen en is beschikbaar als je op een ander apparaat inlogt</p></div><div><h2 id="points">0 punten</h2><small>totaal verdiend</small></div></div></div>
+<div class="tabs"><button class="secondary" data-page="home">overzicht</button><button class="secondary" data-page="h2">hoofdstuk 2 · water</button><button class="secondary" data-page="h3">hoofdstuk 3 · mengsels scheiden</button><button class="secondary" data-page="quiz">oefentoets</button><button class="secondary hidden" id="adminTab" data-page="admin">beheer</button></div>
+<section id="page-home" class="page">
+<div class="grid">
+<div class="card"><h3>hoofdstuk 2 · water</h3><p>leer over water als stof, oplossingen, waterkringloop en drinkwater</p><button data-page="h2">open hoofdstuk</button></div>
+<div class="card"><h3>hoofdstuk 3 · mengsels scheiden</h3><p>leer over zeven, filtreren, indampen, destilleren en chromatografie</p><button data-page="h3">open hoofdstuk</button></div>
+<div class="card"><h3>oefentoets</h3><p>test je kennis met vragen uit beide hoofdstukken</p><button data-page="quiz">start oefentoets</button></div>
+</div>
+<div class="card"><h3>jouw voortgang</h3><div id="progressText">nog geen punten behaald</div></div>
+</section>
+<section id="page-h2" class="page hidden"><div class="card"><span class="pill">hoofdstuk 2</span><h2>water</h2><div class="lesson">
+Water is een zuivere stof als het alleen uit watermoleculen bestaat. Kraanwater is geen zuivere stof: er zitten opgeloste stoffen in, zoals mineralen. Zuiver water heeft een kookpunt van 100 °C en een vriespunt van 0 °C bij normale luchtdruk.
+
+Een oplossing is een helder mengsel waarin een stof gelijkmatig verdeeld is. De stof die oplost heet de opgeloste stof. De vloeistof waarin die stof oplost heet het oplosmiddel. Bij zout water is zout de opgeloste stof en water het oplosmiddel.
+
+Water komt in de natuur voor als ijs, vloeibaar water en waterdamp. Bij verdampen verandert vloeibaar water in gas. Bij condenseren verandert waterdamp in kleine vloeistofdruppels. Bevriezen is vloeibaar naar vast en smelten is vast naar vloeibaar.
+
+De waterkringloop beschrijft hoe water steeds rondgaat. De zon verwarmt water, waardoor het verdampt. Hoger in de lucht koelt waterdamp af en condenseert tot wolken. Daarna valt neerslag, zoals regen of sneeuw. Het water stroomt via rivieren of de bodem terug.
+
+Drinkwater wordt gemaakt uit grondwater of oppervlaktewater. Vuil en ongewenste stoffen worden met verschillende zuiveringsstappen verwijderd. Niet alle stoffen zijn met dezelfde methode te verwijderen.
+</div><h3>controleer jezelf</h3><div id="h2quiz"></div></div></section>
+<section id="page-h3" class="page hidden"><div class="card"><span class="pill">hoofdstuk 3</span><h2>mengsels scheiden</h2><div class="lesson">
+Een mengsel bestaat uit meerdere stoffen door elkaar. Je kunt stoffen scheiden doordat ze verschillende eigenschappen hebben. Een scheidingsmethode kies je dus op basis van een verschil in stofeigenschap.
+
+Zeven gebruik je als de deeltjes verschillend groot zijn. De kleine deeltjes gaan door de zeef en de grote blijven achter. Filtreren werkt met een filter: de vloeistof en kleine opgeloste deeltjes kunnen door het filter, terwijl niet-opgeloste vaste deeltjes achterblijven.
+
+Bezinken en afschenken gebruik je wanneer een vaste stof naar de bodem zakt. Je schenkt daarna voorzichtig de vloeistof weg. Centrifugeren versnelt het scheiden door een mengsel snel rond te draaien.
+
+Indampen gebruik je om een opgeloste vaste stof terug te krijgen. De vloeistof verdampt en de vaste stof blijft achter. Destilleren kan vloeistoffen scheiden op basis van verschil in kookpunt. De stof met het laagste kookpunt verdampt eerder en wordt daarna weer afgekoeld tot vloeistof.
+
+Chromatografie scheidt stoffen doordat ze zich verschillend verdelen tussen een mobiele fase en een stationaire fase. Stoffen bewegen daardoor niet even ver. Je kunt bijvoorbeeld kleuren in inkt uit elkaar halen.
+</div><h3>controleer jezelf</h3><div id="h3quiz"></div></div></section>
+<section id="page-quiz" class="page hidden"><div class="card"><h2>oefentoets</h2><p>beantwoord de vragen en bekijk meteen je resultaat</p><div id="exam"></div></div></section>
+<section id="page-admin" class="page hidden"><div class="card"><span class="pill">beheerder</span><h2>gebruikersbeheer</h2><p>je kunt hier accountgegevens, voortgang en resultaten bekijken. wachtwoorden zijn nooit zichtbaar.</p><button id="refreshAdmin">gegevens vernieuwen</button><div id="adminData" class="tablewrap"></div></div></section>
+</section>
+</main>
+<script>
+const ADMIN_EMAIL = "bloemertmikai@gmail.com";
+let sb=null, currentUser=null, profile=null, totalPoints=0;
+const $=id=>document.getElementById(id);
+function show(id,on=true){$(id).classList.toggle('hidden',!on)}
+function say(t,kind=''){ $('msg').textContent=t; $('msg').className='status '+kind; show('msg',true)}
+function config(){return {url:$('url').value.trim(),key:$('key').value.trim()}}
+function go(page){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));$('page-'+page).classList.remove('hidden');}
+document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+$('connect').onclick=async()=>{let c=config();if(!c.url||!c.key){$('setupmsg').textContent='vul beide velden in';return}try{sb=window.supabase.createClient(c.url,c.key);let {error}=await sb.auth.getSession();if(error)throw error;show('setup',false);show('auth',true);$('setupmsg').textContent='verbonden'}catch(e){$('setupmsg').textContent='verbinden mislukt: '+e.message}};
+$('signup').onclick=async()=>{let email=$('signupEmail').value.trim().toLowerCase(),password=$('signupPass').value,name=$('signupName').value.trim();if(!name||!email||password.length<8){say('vul alles in en gebruik minimaal 8 tekens voor je wachtwoord','error');return}let {error}=await sb.auth.signUp({email,password,options:{data:{username:name}}});if(error)say(error.message,'error');else say('account aangemaakt controleer je e-mail als e-mailbevestiging aanstaat','success')};
+$('login').onclick=async()=>{let {data,error}=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPass').value});if(error)say(error.message,'error');else await loadUser(data.user)};
+$('forgot').onclick=async()=>{let email=$('loginEmail').value.trim();if(!email){say('vul eerst je e-mailadres in','error');return}let {error}=await sb.auth.resetPasswordForEmail(email);say(error?error.message:'als dit account bestaat is een resetmail verstuurd',error?'error':'success')};
+$('logout').onclick=async()=>{await sb.auth.signOut();location.reload()};
+async function loadUser(user){currentUser=user;let {data,error}=await sb.from('profiles').select('*').eq('id',user.id).single();if(error){say('profiel ophalen mislukt: '+error.message,'error');return}profile=data;if(profile.is_blocked){await sb.auth.signOut();say('dit account is geblokkeerd','error');return}
+await sb.from('profiles').update({last_seen:new Date().toISOString()}).eq('id',user.id);
+show('auth',false);show('app',true);show('userbar',true);$('who').textContent=user.email;$('welcome').textContent='welkom '+(profile.username||'');$('roleTag').textContent=profile.role==='admin'?'beheerder':'leerling';show('adminTab',profile.role==='admin');await refreshPoints();go('home');if(profile.role==='admin')loadAdmin();
+}
+async function refreshPoints(){let {data}=await sb.from('progress').select('points').eq('user_id',currentUser.id);totalPoints=(data||[]).reduce((s,x)=>s+(x.points||0),0);$('points').textContent=totalPoints+' punten';$('progressText').textContent=(data||[]).map(x=>x.points+' punten').join(' · ')||'nog geen punten behaald'}
+async function award(chapter,points){let {data}=await sb.from('progress').select('*').eq('user_id',currentUser.id).eq('chapter',chapter).maybeSingle();let next=(data?.points||0)+points;let {error}=await sb.from('progress').upsert({user_id:currentUser.id,chapter,points:next,updated_at:new Date().toISOString()},{onConflict:'user_id,chapter'});if(error)say('voortgang opslaan mislukt: '+error.message,'error');else{say('goed gedaan '+points+' punten verdiend','success');await refreshPoints()}}
+const questions={
+h2:[['wat is bij zout water de opgeloste stof',['water','zout','zuurstof'],1],['bij welke temperatuur kookt zuiver water bij normale luchtdruk',['0 °C','50 °C','100 °C'],2],['hoe heet waterdamp die weer vloeibaar wordt',['condenseren','verdampen','smelten'],0]],
+h3:[['welke methode gebruik je voor zand en water',['indampen','filtreren','chromatografie'],1],['waarop berust destilleren',['verschil in kookpunt','verschil in kleur','verschil in deeltjesgrootte'],0],['welke methode scheidt kleuren in inkt',['zeven','bezinken','chromatografie'],2]],
+exam:[['wat is een oplossing',['een helder mengsel','een zuivere stof','een grof mengsel'],0],['wat gebeurt er bij verdampen',['gas wordt vloeistof','vloeistof wordt gas','vloeistof wordt vast'],1],['wat is het oplosmiddel in suikerwater',['suiker','water','lucht'],1],['welke methode scheidt grind en zand op deeltjesgrootte',['zeven','destilleren','indampen'],0],['wat blijft achter bij filtreren van modderwater',['de opgeloste stoffen','het filterresidu','de waterdamp'],1],['waarop berust destilleren',['kookpunt','kleur','magnetisme'],0],['wat gebeurt er bij condenseren',['gas wordt vloeistof','vast wordt vloeistof','vloeistof wordt gas'],0],['waarvoor gebruik je indampen',['opgeloste vaste stof terugwinnen','grote stukken scheiden','kleuren vergelijken'],0],['welke methode scheidt kleurstoffen',['centrifugeren','chromatografie','zeven'],1],['wat is neerslag in de waterkringloop',['regen of sneeuw','waterdamp','grondwater'],0]]
+};
+function renderQuiz(id,arr,chapter){let host=$(id);host.innerHTML='';let idx=0,score=0;function draw(){if(idx>=arr.length){host.innerHTML='<h3>klaar · '+score+'/'+arr.length+' goed</h3>';sb.from('quiz_results').insert({user_id:currentUser.id,score,total:arr.length});if(score)award(chapter,score*5);return}let q=arr[idx];host.innerHTML='<p class="muted">vraag '+(idx+1)+' van '+arr.length+'</p><div class="question">'+q[0]+'</div>';q[1].forEach((a,i)=>{let b=document.createElement('button');b.className='answer';b.textContent=a;b.onclick=()=>{if(i===q[2])score++;idx++;draw()};host.appendChild(b)})}draw()}
+function renderExam(){renderQuiz('exam',questions.exam,'eindtoets')}
+$('refreshAdmin').onclick=loadAdmin;
+async function loadAdmin(){if(profile?.role!=='admin')return;let [p,pr,qr]=await Promise.all([sb.from('profiles').select('id,email,username,role,is_blocked,created_at,last_seen').order('created_at',{ascending:false}),sb.from('progress').select('user_id,chapter,points'),sb.from('quiz_results').select('user_id,score,total,created_at')]);if(p.error){$('adminData').textContent=p.error.message;return}let rows=p.data||[];$('adminData').innerHTML='<table><thead><tr><th>gebruiker</th><th>e-mail</th><th>aangemaakt</th><th>laatst actief</th><th>punten</th><th>toetsen</th><th>status</th><th>actie</th></tr></thead><tbody>'+rows.map(u=>{let pts=(pr.data||[]).filter(x=>x.user_id===u.id).reduce((s,x)=>s+x.points,0),tests=(qr.data||[]).filter(x=>x.user_id===u.id);return `<tr><td>${esc(u.username||'')}</td><td>${esc(u.email||'')}</td><td>${fmt(u.created_at)}</td><td>${fmt(u.last_seen)}</td><td>${pts}</td><td>${tests.length}</td><td>${u.is_blocked?'geblokkeerd':'actief'}</td><td>${u.id===currentUser.id?'jij':`<button class="secondary" onclick="toggleBlock('${u.id}',${!u.is_blocked})">${u.is_blocked?'deblokkeren':'blokkeren'}</button>`}</td></tr>`}).join('')+'</tbody></table>';if(p.error||pr.error||qr.error)say('niet alle beheerinformatie kon worden geladen','error')}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function fmt(d){return d?new Date(d).toLocaleString('nl-NL'):'nog niet bekend'}
+window.toggleBlock=async(id,val)=>{let {error}=await sb.rpc('set_gamezone_user_blocked',{target_user:id,blocked_value:val});if(error)say('actie mislukt: '+error.message,'error');else{say(val?'account geblokkeerd':'account gedeblokkeerd','success');loadAdmin()}};
+document.querySelectorAll('[data-page="quiz"]').forEach(b=>b.addEventListener('click',renderExam));
+document.querySelectorAll('[data-page="h2"]').forEach(b=>b.addEventListener('click',()=>renderQuiz('h2quiz',questions.h2,'hoofdstuk 2')));
+document.querySelectorAll('[data-page="h3"]').forEach(b=>b.addEventListener('click',()=>renderQuiz('h3quiz',questions.h3,'hoofdstuk 3')));
+</script>
+</body></html>
